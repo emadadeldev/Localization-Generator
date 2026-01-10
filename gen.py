@@ -2,7 +2,6 @@ import re
 import arabic_reshaper
 from bidi.algorithm import get_display
 
-# الأنماط المدعومة
 pattern_space_id = re.compile(r'^(.*?)[ \t]+(0x[0-9A-F]{8})$')
 pattern_text_id  = re.compile(r'^(.*)=(0x[0-9A-F]{8})$')
 pattern_id_text  = re.compile(r'^(0x[0-9A-F]{8})=(.*)$')
@@ -17,10 +16,10 @@ with open("input.txt", "r", encoding="utf-8-sig") as f:
 out_lines = []
 
 for line in lines:
-    line = line.strip()
+    line = line.rstrip("\n")
 
-    # 1) احذف السطور الفاضية
-    if not line:
+    if not line.strip():
+        out_lines.append("\n")
         continue
 
     text = None
@@ -38,13 +37,12 @@ for line in lines:
             if m:
                 hex_id, text = m.group(1), m.group(2)
 
-    # لو السطر مش مفهوم سيبه زي ما هو
     if text is None or hex_id is None:
+        out_lines.append(line + "\n")
         continue
 
     text = text.strip()
 
-    # 2) احذف السطور اللي ID= بس (من غير نص)
     if not text:
         continue
 
@@ -54,4 +52,4 @@ for line in lines:
 with open("output.txt", "w", encoding="utf-8") as f:
     f.writelines(out_lines)
 
-print("✔ تم حذف السطور الفارغة + السطور بدون نص + عكس النصوص العربية")
+print("Done")
