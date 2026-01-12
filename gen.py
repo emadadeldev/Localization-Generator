@@ -7,7 +7,7 @@ pattern_hex = re.compile(r'0x[0-9A-F]{8}')
 
 def reshape_arabic(text: str) -> str:
     reshaped = arabic_reshaper.reshape(text)
-    return get_display(reshaped)
+    return reshaped[::-1]  
 
 with open("input.txt", "r", encoding="utf-8-sig", errors="ignore") as f:
     lines = f.readlines()
