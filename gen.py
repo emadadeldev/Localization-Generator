@@ -4,7 +4,7 @@ import arabic_reshaper
 # ================= REGEX =================
 
 PREFIX_TAG_RE = re.compile(r'^(~[^~]+~)+')          # ~z~ ~sl:x:y~
-INLINE_TAG_RE = re.compile(r'(~rp~|~sl:~)')         # fixed inline tags
+INLINE_TAG_RE = re.compile(r'(~[^~]+~)')
 BLOCK_RE = re.compile(r'~[^~]+~\([^()]*\)~[^~]+~')  # ~d~(...)~s~
 PAREN_RE = re.compile(r'\([^()]*\)')                # (text)
 
