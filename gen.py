@@ -1,31 +1,42 @@
 import re
 import arabic_reshaper
 
-arabic_re = re.compile(r'[\u0600-\u06FF0-9]')
-tag_or_paren_re = re.compile(r'(~[^~]+~|\([^()]*\))')
+PREFIX_TAG_RE = re.compile(r'^(~[^~]+~)+')
+BLOCK_RE = re.compile(r'~[^~]+~\([^()]*\)~[^~]+~')
 
-def flip_arabic_text(text: str) -> str:
-    reshaped = arabic_reshaper.reshape(text)
-    return reshaped[::-1]
-
-def process_part(part: str) -> str:
-    if part.startswith("~") and part.endswith("~"):
-        return part
-
-    if part.startswith("(") and part.endswith(")"):
-        inner = part[1:-1]
-        if arabic_re.search(inner):
-            inner = flip_arabic_text(inner)
-        return f"({inner})"
-
-    if arabic_re.search(part):
-        return flip_arabic_text(part)
-
-    return part
+def flip_ar(t: str) -> str:
+    return arabic_reshaper.reshape(t)[::-1]
 
 def process_line(text: str) -> str:
-    parts = tag_or_paren_re.split(text)
-    return "".join(process_part(p) for p in parts if p)
+    prefix = ""
+    m = PREFIX_TAG_RE.match(text)
+    if m:
+        prefix = m.group()
+        text = text[len(prefix):]
+
+    blocks = []
+    i = 0
+
+    for m in BLOCK_RE.finditer(text):
+        if m.start() > i:
+            blocks.append(("txt", text[i:m.start()]))
+        blocks.append(("blk", m.group()))
+        i = m.end()
+
+    if i < len(text):
+        blocks.append(("txt", text[i:]))
+
+    out = []
+
+    for kind, val in blocks:
+        if kind == "blk":
+            tag1, rest = val.split("(", 1)
+            inner, tag2 = rest.rsplit(")", 1)
+            out.append(f"{tag1}({flip_ar(inner)}){tag2}")
+        else:
+            out.append(flip_ar(val))
+
+    return prefix + "".join(out[::-1])
 
 
 with open("input.txt", "r", encoding="utf-8-sig", errors="ignore") as f:
@@ -38,8 +49,7 @@ for line in lines:
 
     if "=" in line:
         left, right = line.split("=", 1)
-        right = process_line(right)
-        out_lines.append(f"{left}={right}\n")
+        out_lines.append(f"{left}={process_line(right)}\n")
     else:
         out_lines.append(line + "\n")
 
