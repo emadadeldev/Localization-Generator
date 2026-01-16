@@ -4,7 +4,7 @@ import arabic_reshaper
 # ================= REGEX =================
 
 PREFIX_TAG_RE = re.compile(r'^(~[^~]+~)+')          # ~z~ ~sl:x:y~
-INLINE_TAG_RE = re.compile(r'(~[^~]+~)')
+INLINE_TAG_RE = re.compile(r'(~[^~]+~)')           # أي tag بين ~~
 BLOCK_RE = re.compile(r'~[^~]+~\([^()]*\)~[^~]+~')  # ~d~(...)~s~
 PAREN_RE = re.compile(r'\([^()]*\)')                # (text)
 
@@ -57,7 +57,6 @@ def process_segment(text: str) -> str:
     # reverse order BUT keep tokens intact
     return "".join(v for _, v in final[::-1])
 
-
 def process_line(text: str) -> str:
     prefix = ""
     m = PREFIX_TAG_RE.match(text)
@@ -88,8 +87,16 @@ out_lines = []
 
 for line in lines:
     line = line.rstrip("\n")
+
+    if not line.strip():
+        continue
+
     if "=" in line:
         left, right = line.split("=", 1)
+
+        if not right.strip() or all(t.startswith("~") and t.endswith("~") for t in right.split() if t):
+            continue
+
         out_lines.append(f"{left}={process_line(right)}\n")
     else:
         out_lines.append(line + "\n")
