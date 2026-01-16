@@ -2,47 +2,58 @@ import tkinter as tk
 from tkinter import scrolledtext
 import re
 
-# ======  tag ======
+
 TAG_COLORS = {
-    "~d~": "orange",  
-    "~z~": "red",     
-    "~lr": "gray"    
+    "~d~": "orange",
+    "~z~": "red",
+    "~lr": "gray"
 }
 
-# ====== Preview ======
+
+def reverse_text(text):
+    return text[::-1]
+
+
 def update_preview(event=None):
     preview_text.config(state='normal')
     preview_text.delete(1.0, tk.END)
-    
+
     text = input_text.get("1.0", tk.END).strip()
 
-    prefix_pattern = re.compile(r'(~sl:|~d~)')
+    
+    text = reverse_text(text)
+
+    
+    prefix_pattern = re.compile(r'(~sl:|~d~|~z~)')
     match = prefix_pattern.search(text)
     if match:
-        text = text[match.start():]
-    
+        text_to_process = text[match.start():]
+    else:
+        text_to_process = text
+
     idx = 0
-    while idx < len(text):
-        tag_match = re.search(r'(~[a-z]{1,2}(:[^\~]*)?~)', text[idx:])
+    while idx < len(text_to_process):
+        tag_match = re.search(r'(~[a-z]{1,2}(:[^\~]*)?~)', text_to_process[idx:])
         if not tag_match:
-            preview_text.insert(tk.END, text[idx:])
+            preview_text.insert(tk.END, text_to_process[idx:])
             break
 
         start_tag = idx + tag_match.start()
         end_tag = idx + tag_match.end()
         tag = tag_match.group(1)
 
-        preview_text.insert(tk.END, text[idx:start_tag])
+        
+        if start_tag > idx:
+            preview_text.insert(tk.END, text_to_process[idx:start_tag])
 
+        
         if tag.startswith("~d~"):
-            end_d = text.find("~s~", end_tag)
+            end_d = text_to_process.find("~s~", end_tag)
             if end_d == -1:
-                colored_text = text[end_tag:]
-                preview_text.insert(tk.END, colored_text, "orange")
+                preview_text.insert(tk.END, text_to_process[end_tag:], "orange")
                 break
             else:
-                colored_text = text[end_tag:end_d]
-                preview_text.insert(tk.END, colored_text, "orange")
+                preview_text.insert(preview_text.index(tk.END), text_to_process[end_tag:end_d], "orange")
                 idx = end_d + 3
                 continue
 
@@ -51,11 +62,7 @@ def update_preview(event=None):
             idx = end_tag
             continue
 
-        elif tag.startswith("~z~"):
-            idx = end_tag
-            continue
-
-        elif tag.startswith("~lr"):
+        elif tag.startswith("~z~") or tag.startswith("~lr"):
             idx = end_tag
             continue
 
@@ -64,17 +71,29 @@ def update_preview(event=None):
 
     preview_text.config(state='disabled')
 
+
+def mirror_input(event=None):
+    text = input_text.get("1.0", tk.END).rstrip("\n")
+    reversed_text = reverse_text(text)
+    input_text.delete("1.0", tk.END)
+    input_text.insert("1.0", reversed_text)
+    
+    input_text.mark_set(tk.INSERT, tk.END)
+    
+    update_preview()
+
+
 root = tk.Tk()
-root.title("RDR2 Text Preview")
+root.title("RDR2 Text Input & Preview")
 root.geometry("900x450")
 
-input_label = tk.Label(root, text="أدخل النص هنا:")
+input_label = tk.Label(root, text="أدخل النص (سيتم عكسه تلقائيًا):")
 input_label.pack()
 input_text = scrolledtext.ScrolledText(root, height=7)
 input_text.pack(fill=tk.X)
-input_text.bind("<KeyRelease>", update_preview)
+input_text.bind("<KeyRelease>", mirror_input)
 
-preview_label = tk.Label(root, text="المعاينة (كما في RDR2):")
+preview_label = tk.Label(root, text="المعاينة (النص سليم):")
 preview_label.pack()
 preview_text = scrolledtext.ScrolledText(root, height=15, state='disabled', wrap=tk.WORD)
 preview_text.pack(fill=tk.BOTH, expand=True)
